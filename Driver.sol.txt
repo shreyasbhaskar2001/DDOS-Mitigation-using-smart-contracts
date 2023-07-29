@@ -1,0 +1,34 @@
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.6.0 <=0.8.10;
+
+import "./DataTransfer.sol";
+
+contract Driver {
+    RateLimiter public rateLimiter;
+    NodeManagement public nodeManagement;
+    DataTransfer public dataTransfer;
+    ResourceTransfer public resourceTransfer;
+
+    constructor() {
+        rateLimiter = new RateLimiter(10,60);
+        nodeManagement = new NodeManagement();
+        resourceTransfer = new ResourceTransfer();
+        dataTransfer = new DataTransfer(rateLimiter, nodeManagement, resourceTransfer);
+    }
+
+    function addNode(address _node) public {
+        nodeManagement.addNode(_node);
+    }
+
+    function removeNode(address _node) public {
+        nodeManagement.removeNode(_node);
+    }
+
+    function transferData(address _to, bytes memory _data) public {
+        dataTransfer.transferData(_to, _data);
+    }
+
+    function transferResources(address _from, address _to, uint256 _amount) public {
+        resourceTransfer.transfer(_from, _to, _amount);
+    }
+}

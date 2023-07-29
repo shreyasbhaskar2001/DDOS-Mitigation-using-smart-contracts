@@ -1,0 +1,47 @@
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.6.0 <=0.8.10;
+contract ResourceTransfer {
+    mapping(address => uint256) public nodeIndices;
+    mapping(uint256 => address) public nodes;
+    mapping(address => uint256) public nodeBalances;
+    uint256 public numNodes = 1;
+
+    constructor() {
+        nodeIndices[address(this)] = 0;
+        nodes[0] = address(this);
+        nodeBalances[address(this)] = 1000000000000000000;
+    }
+
+    function addNode(address _node) public {
+        require(msg.sender == address(this), "Only the contract owner can add new nodes.");
+        require(nodeIndices[_node] == 0, "Node already exists.");
+        nodeIndices[_node] = numNodes;
+        nodes[numNodes] = _node;
+        nodeBalances[_node] = 1000000000000000000;
+        numNodes++;
+    }
+
+    function removeNode(address _node) public {
+        require(msg.sender == address(this), "Only the contract owner can remove nodes.");
+        require(nodeIndices[_node] != 0, "Node does not exist.");
+        uint256 index = nodeIndices[_node];
+        address lastNode = nodes[numNodes - 1];
+        nodes[index] = lastNode;
+        nodeIndices[lastNode] = index;
+        delete nodeIndices[_node];
+        delete nodes[numNodes - 1];
+        numNodes--;
+        delete nodeBalances[_node];
+    }
+
+    function transfer(address _from, address _to, uint256 _amount) public {
+        require(nodeIndices[_from] != 0, "Invalid from address.");
+        require(nodeIndices[_to] != 0, "Invalid to address.");
+        require(nodeBalances[_from] >= _amount, "Insufficient balance.");
+        nodeBalances[_from] -= _amount;
+        nodeBalances[_to] += _amount;
+        emit Transfer(_from, _to, _amount);
+    }
+
+    event Transfer(address indexed from, address indexed to, uint256 amount);
+}

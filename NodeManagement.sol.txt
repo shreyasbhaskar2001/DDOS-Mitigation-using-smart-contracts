@@ -1,0 +1,31 @@
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.6.0 <=0.8.10;
+
+contract NodeManagement {
+
+    address[] public validNodes;
+
+    function addNode(address _node) public {
+        require(msg.sender == address(this), "Only the contract owner can add new nodes.");
+        validNodes.push(_node);
+    }
+
+    function removeNode(address _node) public {
+        require(msg.sender == address(this), "Only the contract owner can remove nodes.");
+        for (uint256 i = 0; i < validNodes.length; i++) {
+            if (validNodes[i] == _node) {
+                delete validNodes[i];
+                break;
+            }
+        }
+    }
+
+    function isValidNode(address _node) public view returns (bool) {
+        for (uint256 i = 0; i < validNodes.length; i++) {
+            if (validNodes[i] == _node) {
+                return true;
+            }
+        }
+        return false;
+    }
+}

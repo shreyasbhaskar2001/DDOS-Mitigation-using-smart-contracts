@@ -1,0 +1,65 @@
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.6.0 <=0.8.10;
+// contract RateLimiter {
+//     uint256 public limit;
+//     uint256 public timeWindow;
+//     mapping (address => uint256[2]) public requests;
+
+//     constructor(uint256 _limit, uint256 _timeWindow){
+//         limit = _limit;
+//         timeWindow = _timeWindow;
+//     }
+
+//     function request() public {
+//         uint256 currentTime = block.timestamp;
+//         uint256 count = 0;
+//         for (uint256 i = 0; i < limit; i++) {
+//             if (currentTime - requests[msg.sender][0] < timeWindow) {
+//                 count++;
+//             }
+//         }
+//         if (count >= limit) {
+//             revert();
+//         }
+//         requests[msg.sender][0] = currentTime;
+//         requests[msg.sender][1] = count + 1;
+//     }
+// }
+
+contract RateLimiter {
+    uint256 public maxRequests;
+    uint256 public timeInterval;
+    uint256 public requestCounter;
+    uint256 public lastReset;
+
+    event Request(address indexed sender);
+
+    constructor(uint256 _maxRequests, uint256 _timeInterval) {
+        maxRequests = _maxRequests;
+        timeInterval = _timeInterval;
+        lastReset = block.timestamp;
+    }
+
+    function request() public returns (bool) {
+        if (isUnderDDoSAttack()) {
+            return false;
+        } else {
+            if (block.timestamp >= lastReset + timeInterval) {
+                lastReset = block.timestamp;
+                requestCounter = 1;
+            } else {
+                requestCounter++;
+            }
+            emit Request(msg.sender);
+            return requestCounter <= maxRequests;
+        }
+    }
+
+    function isUnderDDoSAttack() public view returns (bool) {
+        // Calculate the average number of requests per second
+        uint256 averageRequestsPerSecond = requestCounter / (block.timestamp - lastReset);
+        // If the average number of requests per second is above a certain threshold, consider it a DDoS attack
+        return averageRequestsPerSecond > 100; // Change this threshold to suit your needs
+    }
+
+}

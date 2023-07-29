@@ -1,0 +1,38 @@
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.6.0 <=0.8.10;
+//nodeManagement
+//ResourceTransfer
+///Data transfer
+
+import "./RateLimiter.sol";
+import "./NodeManagement.sol";
+import "./ResourceTransfer.sol";
+
+contract DataTransfer {
+    RateLimiter public rateLimiter;
+    NodeManagement public nodeManagement;
+    ResourceTransfer public resourceTransfer;
+
+    event DataTransferred(address indexed to, bytes data);
+
+    constructor(RateLimiter _rateLimiter, NodeManagement _nodeManagement, ResourceTransfer _resourceTransfer) {
+        rateLimiter = _rateLimiter;
+        nodeManagement = _nodeManagement;
+        resourceTransfer = _resourceTransfer;
+    }
+
+    function transferData(address _to, bytes memory _data) public {
+        require(nodeManagement.isValidNode(msg.sender), "Invalid node.");
+        require(rateLimiter.request(), "Too many requests. Please try again later.");
+        if (rateLimiter.isUnderDDoSAttack()) {
+            uint256 balance = resourceTransfer.nodeBalances(address(this));
+            if (balance > 0) {
+                resourceTransfer.transfer(address(this), _to, balance);
+                emit DataTransferred(_to, _data);
+            }
+        } else {
+            emit DataTransferred(_to, _data);
+        }
+    }
+}
+
